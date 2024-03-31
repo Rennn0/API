@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Application.Handlers
 {
-    public sealed class H_Test : IRequestHandler<C_Test, string>
+    public sealed class HC_Test : IRequestHandler<C_Test, string>
     {
         public Task<string> Handle(C_Test request, CancellationToken cancellationToken)
         {

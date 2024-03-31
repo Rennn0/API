@@ -6,7 +6,11 @@ namespace Application.Handlers
     {
         public static IServiceCollection RegisterRequestHandlers(this IServiceCollection services)
         {
-            return services.AddMediatR(config => config.RegisterServicesFromAssemblies(typeof(H_MediatR).Assembly));
+            return services.AddMediatR(config =>
+            {
+                config.RegisterServicesFromAssemblies(typeof(H_MediatR).Assembly);
+                config.NotificationPublisher = new TaskWhenAllPublisher();
+            });
         }
     }
 }

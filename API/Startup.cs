@@ -1,8 +1,12 @@
-﻿using Application.Handlers;
+﻿using Application.Commands;
+using Application.Handlers;
 using Application.Middlewares;
 using Asp.Versioning;
 using MediatR;
+using MediatR.Pipeline;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 namespace API
 {
@@ -14,6 +18,8 @@ namespace API
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>
@@ -31,6 +37,18 @@ namespace API
 
         public void ConfigureServices(IServiceCollection services)
         {
+            string logFolderDay = DateTime.Now.ToString("MM-dd");
+            string logFileHour = DateTime.Now.Hour.ToString();
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.File($"__logs__/date-{logFolderDay}/hour-{logFileHour}-.txt", rollingInterval: RollingInterval.Hour)
+                .CreateLogger();
+
+            services.AddLogging(builder =>
+            {
+                builder.AddSerilog(dispose: true);
+            });
+
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(c =>
@@ -39,10 +57,17 @@ namespace API
                 c.SwaggerDoc("v2", new OpenApiInfo { Title = "v2 api", Version = "2" });
             });
 
+            /*
+             *  MediatR dependency injections goes here
+             */
             services.RegisterRequestHandlers();
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TracingBehavior<,>));
-            services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
 
+            //services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TracingBehavior<,>));
+            //services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
+
+            /*
+             * -------------------------------------------------------------------------------
+             */
             services.AddApiVersioning(options =>
             {
                 options.DefaultApiVersion = new ApiVersion(1);

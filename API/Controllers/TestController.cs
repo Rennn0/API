@@ -11,8 +11,7 @@ namespace API.Controllers
     [ApiController]
     public class TestController(IMediator _mediator) : ControllerBase
     {
-        [HttpPost]
-        [MapToApiVersion(1)]
+        [HttpPost, MapToApiVersion(1)]
         public async Task<IActionResult> GetV1(C_Test c_Test)
         {
             if (!ModelState.IsValid)
@@ -22,8 +21,19 @@ namespace API.Controllers
             return Ok($"{result} version 1");
         }
 
-        [HttpPost]
-        [MapToApiVersion(2)]
+        [HttpGet("t2"), MapToApiVersion(1)]
+        public async Task<IActionResult> GetT2()
+        {
+            return Ok(await _mediator.Send(new C_Test2 { Id = 1 }));
+        }
+
+        [HttpGet("t3"), MapToApiVersion(1)]
+        public async Task<IActionResult> GetT3()
+        {
+            return Ok(await _mediator.Send(new C_Test3 { Id = 1 }));
+        }
+
+        [HttpPost, MapToApiVersion(2)]
         public async Task<IActionResult> GetV2(C_Test c_Test)
         {
             if (!ModelState.IsValid)

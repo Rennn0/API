@@ -4,21 +4,18 @@ using MediatR;
 
 namespace Application.Middlewares
 {
-    public sealed class CachingBehavior<Request, Response> : IPipelineBehavior<Request, Response>
-        where Request : class, IRequest<Response>
+    public sealed class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : class, IRequest<TResponse>
     {
-        private Dictionary<Request, Response> Cache { get; set; } = new Dictionary<Request, Response>(new ObjectComparer<Request>());
+        private Dictionary<TRequest, TResponse> Cache { get; set; } = new Dictionary<TRequest, TResponse>(new ObjectComparer<TRequest>());
 
-        public async Task<Response> Handle(Request request, RequestHandlerDelegate<Response> next, CancellationToken cancellationToken)
+        public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
-            if (Cache.TryGetValue(request, out Response? value))
+            if (Cache.TryGetValue(request, out TResponse? value))
                 return value;
 
             var result = await next();
             Cache.Add(request, result);
-            Console.WriteLine($"Cached total - {Cache.Count}");
-            Console.WriteLine($"values size - {ObjectSize.Get(Cache.Values)} bytes");
-            Console.WriteLine($"keys size - {ObjectSize.Get(Cache.Keys)} bytes");
             return result;
         }
     }
