@@ -17,7 +17,7 @@ namespace Application.Handlers
 
             Console.WriteLine("DONE PUBLISH--------");
 
-            await Task.Delay(1999, cancellationToken);
+            await Task.Delay(1500, cancellationToken);
             ct.Cancel();
 
             return 0;

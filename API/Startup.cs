@@ -4,8 +4,10 @@ using Application.Middlewares;
 using Asp.Versioning;
 using MediatR;
 using MediatR.Pipeline;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using Repository.Base;
 using Serilog;
 
 namespace API
@@ -49,6 +51,13 @@ namespace API
                 builder.AddSerilog(dispose: true);
             });
 
+            services.AddDbContext<EShopContext>(opt =>
+            {
+                opt
+                    .UseSqlServer(_configuration.GetConnectionString("EShop"))
+                    .EnableSensitiveDataLogging();
+            });
+
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(c =>
@@ -68,6 +77,8 @@ namespace API
             /*
              * -------------------------------------------------------------------------------
              */
+            services.AddTransient<IUnitOfWork, UnitOfWork>();
+
             services.AddApiVersioning(options =>
             {
                 options.DefaultApiVersion = new ApiVersion(1);
