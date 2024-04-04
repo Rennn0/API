@@ -2,6 +2,7 @@
 using Application.Handlers;
 using Application.Middlewares;
 using Asp.Versioning;
+using Domain.Entities;
 using MediatR;
 using MediatR.Pipeline;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Repository.Base;
 using Serilog;
+using System.Text.Json.Serialization;
 
 namespace API
 {
@@ -51,13 +53,6 @@ namespace API
                 builder.AddSerilog(dispose: true);
             });
 
-            services.AddDbContext<EShopContext>(opt =>
-            {
-                opt
-                    .UseSqlServer(_configuration.GetConnectionString("EShop"))
-                    .EnableSensitiveDataLogging();
-            });
-
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(c =>
@@ -66,18 +61,21 @@ namespace API
                 c.SwaggerDoc("v2", new OpenApiInfo { Title = "v2 api", Version = "2" });
             });
 
-            /*
-             *  MediatR dependency injections goes here
-             */
-            services.RegisterRequestHandlers();
+            /*  MediatR dependency injections goes here  */
 
+            services.RegisterRequestHandlers();
             //services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TracingBehavior<,>));
             //services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
 
-            /*
-             * -------------------------------------------------------------------------------
-             */
+            /*-------------------------------------------------------------------------------*/
+
+            services.AddDbContext<EShopContext>(opt =>
+            {
+                opt.UseSqlServer(_configuration.GetConnectionString("EShop"))
+                   .EnableSensitiveDataLogging();
+            });
             services.AddTransient<IUnitOfWork, UnitOfWork>();
+            services.AddScoped(typeof(IRepository<>), typeof(EFRepository<>));
 
             services.AddApiVersioning(options =>
             {
@@ -85,8 +83,7 @@ namespace API
                 options.ReportApiVersions = true;
                 options.AssumeDefaultVersionWhenUnspecified = true;
                 options.ApiVersionReader = new UrlSegmentApiVersionReader();
-            })
-                .AddApiExplorer(options =>
+            }).AddApiExplorer(options =>
             {
                 options.GroupNameFormat = "'v'V";
                 options.SubstituteApiVersionInUrl = true;

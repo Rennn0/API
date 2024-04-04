@@ -4,18 +4,20 @@ namespace Repository.Base
 {
     public interface IRepository<T>
     {
-        T GetById(int id);
+        Task<T> GetByIdAsync(int id, params Expression<Func<T, object>>[] include);
 
-        T GetById(Guid id);
+        Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] include);
 
-        IEnumerable<T> GetAll();
-
-        void Add(T entity);
+        Task AddAsync(T entity);
 
         void Update(T entity);
 
         void Delete(T entity);
 
-        IEnumerable<T> Find(Expression<Func<T, bool>> predicate);
+        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] include);
+
+        Task<IEnumerable<T>> GetPagedAsync(Expression<Func<T, bool>> predicate, int size, int page, params Expression<Func<T, object>>[] include);
+
+        Task SaveAsync();
     }
 }

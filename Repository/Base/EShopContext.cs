@@ -26,13 +26,23 @@ namespace Repository.Base
         {
             builder.Entity<Product>(p =>
             {
-                p.Property(p => p.Price).HasPrecision(9, 2);
+                p.Property(p => p.Id).ValueGeneratedOnAdd();
+                p.Property(p => p.Price).HasPrecision(12, 4);
             });
 
-            builder.Entity<Category>()
-                .HasMany(c => c.Products)
-                .WithOne(p => p.Category)
-                .HasForeignKey(p => p.Id);
+            builder.Entity<User>(u =>
+            {
+                u.Property(u => u.Id).ValueGeneratedOnAdd();
+            });
+            builder.Entity<Category>(c =>
+            {
+                c.Property(c => c.Id).ValueGeneratedOnAdd();
+            });
+
+            builder.Entity<Category>(c =>
+            {
+                c.HasMany(c => c.Products).WithOne(p => p.Category).HasForeignKey(p => p.CategoryId);
+            });
         }
     }
 }

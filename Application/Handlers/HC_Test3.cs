@@ -1,41 +1,38 @@
 ﻿using Application.Commands;
 using Domain.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore.Internal;
 using Repository.Base;
+using Repository.Exceptions;
+using Repository.Extensions;
+using System.Text.Json;
 
 namespace Application.Handlers
 {
-    public sealed class HC_Test3: IRequestHandler<C_Test3, int>
+    public sealed class HC_Test3(IUnitOfWork _unitOfWork) : IRequestHandler<C_Test3, Category>
     {
-        public async Task<int> Handle(C_Test3 request, CancellationToken cancellationToken)
-        {       
-            using (IUnitOfWork unitOfWork=new UnitOfWork( new EShopContext ()))
+        public Task<Category> Handle(C_Test3 request, CancellationToken cancellationToken)
+        {
+            try
             {
-                IRepository<Category> categoryRepo = unitOfWork.Repository<Category>();
-                IRepository<Product> productRepo = unitOfWork.Repository<Product>();
-
-                Category category = new Category
+                Category category = _unitOfWork.Repository<Category>().GetByIdAsync(request.CategoryId).Result;
+                Product prod = new Product
                 {
-                    Description = "Test Category2",
-                    Name = "CAT12",
+                    Category = category,
+                    Name = request.Name,
+                    Price = request.Price,
+                    Quantity = request.Quantity,
                 };
-                categoryRepo.Add(category);
-
-                Product product = new Product
-                {
-                    Name = "Test Product31312",
-                    Price = 123,
-                    Quantity = 13,
-                    Category = category
-                };
-                productRepo.Add(product);
-
-                await unitOfWork.SaveAsync();
+                _unitOfWork.Repository<Product>().AddAsync(prod).Wait(cancellationToken);
+                category = _unitOfWork.Repository<Category>().GetByIdAsync(category.Id, x => x.Products).Result;
+                _unitOfWork.Repository<Product>().SaveAsync();
+                return Task.FromResult(category);
             }
-                    
-
-            Console.WriteLine("HANDLER 3");
-            return await Task.FromResult(0);
+            catch (Exception)
+            {
+                _unitOfWork.RollBack();
+                throw;
+            }
         }
     }
 }

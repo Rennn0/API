@@ -22,15 +22,15 @@ namespace API.Controllers
         }
 
         [HttpGet("t2"), MapToApiVersion(1)]
-        public async Task<IActionResult> GetT2()
+        public async Task<IActionResult> GetT2([FromQuery] C_Test2 command)
         {
-            return Ok(await _mediator.Send(new C_Test2 { Id = 1 }));
+            return Ok(await _mediator.Send(command));
         }
 
         [HttpGet("t3"), MapToApiVersion(1)]
-        public async Task<IActionResult> GetT3()
+        public async Task<IActionResult> GetT3([FromQuery] C_Test3 command)
         {
-            return Ok(await _mediator.Send(new C_Test3 { Id = 1 }));
+            return Ok(await _mediator.Send(command));
         }
 
         [HttpPost, MapToApiVersion(2)]
