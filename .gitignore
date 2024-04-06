@@ -364,7 +364,8 @@ FodyWeavers.xsd
 
 # log files
 
-*/__logs__
+**/__logs__
 
 */Migrations
-*/appsettings.*
+
+**/appsettings.*.json
