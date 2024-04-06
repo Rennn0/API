@@ -2,15 +2,8 @@
 {
     public class NotFoundExc : Exception
     {
-        public NotFoundExc()
+        public NotFoundExc(object resource)
+            : base($"Resource {resource} not found")
         { }
-
-        public NotFoundExc(string message) : base(message)
-        {
-        }
-
-        public NotFoundExc(string message, Exception innerException) : base(message, innerException)
-        {
-        }
     }
 }

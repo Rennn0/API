@@ -10,7 +10,9 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["API/API.csproj", "API/"]
-COPY ["../Application/Application.csproj", "Application/"]
+COPY ["Application/Application.csproj", "Application/"]
+COPY ["Domain/Domain.csproj", "Domain/"]
+COPY ["Repository/Repository.csproj", "Repository/"]
 RUN dotnet restore "./API/./API.csproj"
 COPY . .
 WORKDIR "/src/API"
@@ -24,3 +26,5 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "API.dll"]
+
+# dockeraspnet.azurecr.io/asp-net image name

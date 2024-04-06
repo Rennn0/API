@@ -27,8 +27,12 @@ namespace Application.Middlewares
 
             var response = new
             {
+#if DEBUG
                 message = ex.Message,
                 stackTrace = ex.StackTrace
+#elif RELEASE
+                message = ex.Message,
+#endif
             };
 
             var result = JsonSerializer.Serialize(response);

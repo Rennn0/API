@@ -55,7 +55,7 @@ namespace Repository.Base
         {
             var query = include.Length > 0 ? Includes(include) : _dbSet;
             var entity = await query.SingleOrDefaultAsync(e => e.Id == id);
-            return entity ?? throw new NotFoundExc();
+            return entity ?? throw new NotFoundExc(id);
         }
 
         public async Task SaveAsync()
