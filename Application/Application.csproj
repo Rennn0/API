@@ -7,8 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="Commands\PurchaseCommands\" />
+    <Folder Include="Commands\ProductCommands\" />
+    <Folder Include="Commands\UserCommands\" />
+    <Folder Include="Handlers\ProductHandlers\" />
+    <Folder Include="Handlers\PurchaseHandlers\" />
+    <Folder Include="Handlers\UserHandlers\" />
     <Folder Include="Interfaces\" />
-    <Folder Include="Queries\" />
+    <Folder Include="Notifications\" />
   </ItemGroup>
 
   <ItemGroup>

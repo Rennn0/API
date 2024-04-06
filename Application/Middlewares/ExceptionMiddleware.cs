@@ -23,7 +23,7 @@ namespace Application.Middlewares
         private Task HandleExceptionAsync(HttpContext http, Exception ex)
         {
             http.Response.ContentType = "application/json";
-            http.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            http.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
             var response = new
             {

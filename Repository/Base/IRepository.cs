@@ -1,8 +1,9 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Repository.Base
 {
-    public interface IRepository<T>
+    public interface IRepository<T> where T : class
     {
         Task<T> GetByIdAsync(int id, params Expression<Func<T, object>>[] include);
 
@@ -13,6 +14,8 @@ namespace Repository.Base
         void Update(T entity);
 
         void Delete(T entity);
+
+        DbSet<T> QueryBuilder();
 
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] include);
 
