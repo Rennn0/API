@@ -13,13 +13,13 @@
     <Folder Include="Handlers\ProductHandlers\" />
     <Folder Include="Handlers\PurchaseHandlers\" />
     <Folder Include="Handlers\UserHandlers\" />
-    <Folder Include="Interfaces\" />
-    <Folder Include="Notifications\" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MediatR" Version="12.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
   </ItemGroup>
 

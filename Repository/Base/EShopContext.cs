@@ -5,17 +5,19 @@ namespace Repository.Base
 {
 	public class EShopContext : DbContext
 	{
-		public EShopContext(DbContextOptions<EShopContext> options) : base(options)
-		{
-			Database.Migrate();
-		}
-
-		public EShopContext() : base()
-		{ }
-
 		public DbSet<User> Users { get; set; }
 		public DbSet<Product> Products { get; set; }
 		public DbSet<Category> Categories { get; set; }
+		public DbSet<PurchaseHistory> PurchaseHistories { get; set; }
+		public DbSet<UserVerification> UserVerifications { get; set; }
+
+		public EShopContext(DbContextOptions<EShopContext> options) : base(options)
+		{
+		}
+
+		public EShopContext() : base()
+		{
+		}
 
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
@@ -27,6 +29,7 @@ namespace Repository.Base
 			builder.Entity<User>(u =>
 			{
 				u.Property(u => u.Id).ValueGeneratedOnAdd();
+				u.HasIndex(u => u.Email).IsUnique();
 				u.HasMany(u => u.PurchaseHistories).WithOne(ph => ph.User).HasForeignKey(ph => ph.UserId);
 			});
 
@@ -51,6 +54,12 @@ namespace Repository.Base
 				ph.HasOne(ph => ph.User).WithMany(u => u.PurchaseHistories).HasForeignKey(ph => ph.UserId);
 				ph.HasOne(ph => ph.Product).WithMany(p => p.PurchaseHistories).HasForeignKey(ph => ph.ProductId);
 				ph.HasIndex(ph => ph.Correlation);
+			});
+
+			builder.Entity<UserVerification>(uv =>
+			{
+				uv.Property(uv => uv.Id).ValueGeneratedOnAdd();
+				uv.HasIndex(uv => uv.Hash).IsUnique();
 			});
 		}
 	}

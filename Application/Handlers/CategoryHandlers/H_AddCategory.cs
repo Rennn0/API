@@ -14,7 +14,6 @@ namespace Application.Handlers.CategoryHandlers
 			{
 				Description = request.Description,
 				Name = request.Name,
-				CreatedAt = DateTimeOffset.Now.ToUnixTimeMilliseconds()
 			};
 			try
 			{

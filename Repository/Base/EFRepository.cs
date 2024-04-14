@@ -54,8 +54,8 @@ namespace Repository.Base
 		public async Task<T> GetByIdAsync(int id, params Expression<Func<T, object>>[] include)
 		{
 			var query = include.Length > 0 ? Includes(include) : _dbSet;
-			var entity = await query.SingleOrDefaultAsync(e => e.Id == id);
-			return entity ?? throw new NotFoundExc(id);
+			var entity = await query.SingleOrDefaultAsync(e => e.Id == id) ?? throw new NotFoundExc(id);
+			return entity ;
 		}
 
 		public async Task SaveAsync()

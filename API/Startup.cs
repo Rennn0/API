@@ -1,15 +1,18 @@
 ﻿using Application.Handlers;
+using Application.Interfaces;
 using Application.Middlewares;
+using Application.OtherUtils;
 using Asp.Versioning;
-using Domain.Entities;
-using MediatR;
-using MediatR.Pipeline;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.SqlServer.Update.Internal;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Repository.Base;
 using Serilog;
-using System.Text.Json.Serialization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 
 namespace API
 {
@@ -22,9 +25,6 @@ namespace API
 				app.UseDeveloperExceptionPage();
 			}
 
-			app.UseMiddleware<ExceptionMiddleware>();
-			app.UseMiddleware<UserDataCollector>();
-
 			app.UseSwagger();
 			app.UseSwaggerUI(c =>
 			{
@@ -32,8 +32,17 @@ namespace API
 				c.SwaggerEndpoint("/swagger/v2/swagger.json", "V2");
 			});
 
-			app.UseRouting()
-			   .UseEndpoints(endpoints =>
+			app.UseMiddleware<ExceptionMiddleware>();
+			app.UseMiddleware<UserDataCollector>();
+
+			app.UseRouting();
+
+			app.UseHttpsRedirection();
+
+			app.UseAuthentication();
+			app.UseAuthorization();
+
+			app.UseEndpoints(endpoints =>
 			{
 				endpoints.MapControllers();
 			});
@@ -60,21 +69,64 @@ namespace API
 				c.SwaggerDoc("v2", new OpenApiInfo { Title = "v2 api", Version = "2" });
 			});
 
-			/*  MediatR dependency injections goes here  */
-
-			services.RegisterRequestHandlers();
-			//services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TracingBehavior<,>));
-			//services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
-
-			/*-------------------------------------------------------------------------------*/
+			services.AddHttpContextAccessor();
+			services.AddAuthorization();
 
 			services.AddDbContext<EShopContext>(opt =>
 			{
 				opt.UseSqlServer(_configuration.GetConnectionString("EShop"))
 				   .EnableSensitiveDataLogging();
 			});
-			services.AddTransient<IUnitOfWork, UnitOfWork>();
+
+			services.Configure<Smtp>(_configuration.GetSection("Smtp"));
+			services.Configure<JwtConfig>(_configuration.GetSection("Jwt"));
+			services.Configure<Application.OtherUtils.Domain>(_configuration.GetSection("Domain"));
+
+			/*-------------------------------------------------------------------------------*/
+			/*---------------------------------DEPENDENCY------------------------------------*/
+			/*-------------------------------------------------------------------------------*/
+
+			services.AddSingleton<ISmtp, Smtp>();
+
 			services.AddScoped(typeof(IRepository<>), typeof(EFRepository<>));
+
+			services.AddTransient<IUnitOfWork, UnitOfWork>();
+			services.AddTransient<IPostman, Postman>();
+
+			/*-------------------------------------------------------------------------------*/
+			/*---------------------------------MEDIATR---------------------------------------*/
+			/*-------------------------------------------------------------------------------*/
+
+			services.RegisterRequestHandlers();
+			//services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TracingBehavior<,>));
+			//services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
+
+			/*-------------------------------------------------------------------------------*/
+			/*-------------------------------------------------------------------------------*/
+			/*-------------------------------------------------------------------------------*/
+
+			string? key = _configuration.GetSection("Jwt:Key").Get<string>();
+			string? issuuer = _configuration.GetSection("Jwt:Issuer").Get<string>();
+			string? audience = _configuration.GetSection("Jwt:Audience").Get<string>();
+
+			if (key.IsNullOrEmpty() || issuuer.IsNullOrEmpty() || audience.IsNullOrEmpty())
+				throw new ArgumentException("jwt config not provided");
+
+			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+				.AddJwtBearer(options =>
+				{
+					options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+					{
+						ValidateIssuer = true,
+						ValidateAudience = true,
+						ValidateLifetime = true,
+						ValidateIssuerSigningKey = true,
+						ValidIssuer = issuuer,
+						ValidAudience = audience,
+						IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!)),
+						ClockSkew = TimeSpan.Zero
+					};
+				});
 
 			services.AddApiVersioning(options =>
 			{

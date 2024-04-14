@@ -2,7 +2,7 @@
 {
     public static class UniqueString
     {
-        private static readonly string _chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0zxcvbnmasdfghjklqwertyuiop0123456789!@#$%^&*()_+|}{:?></.,";
+        private static readonly string _chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZzxcvbnmasdfghjklqwertyuiop0123456789";
 
         /// <summary>
         ///     probability 96^length

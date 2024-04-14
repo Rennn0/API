@@ -5,7 +5,7 @@ using Repository.Base;
 
 namespace Application.Handlers.CategoryHandlers
 {
-	public sealed class H_DeleteCategory(IUnitOfWork _unit) : IRequestHandler<C_DeleteCategory, Object>
+	public sealed class H_DeleteCategory(IUnitOfWork _unit) : IRequestHandler<C_DeleteCategory, object>
 	{
 		public async Task<object> Handle(C_DeleteCategory request, CancellationToken cancellationToken)
 		{
