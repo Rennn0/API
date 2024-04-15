@@ -5,10 +5,11 @@ using Domain.Entities;
 using MediatR;
 using Repository.Base;
 using Repository.Exceptions;
+using static Application.OtherUtils.Security;
 
 namespace Application.Handlers.UserVerificationHandlers
 {
-	public sealed class H_VerifyUser(IUnitOfWork _unit) : IRequestHandler<C_VerifyUser, object>
+	public sealed class H_VerifyUser(IUnitOfWork _unit, Security security) : IRequestHandler<C_VerifyUser, object>
 	{
 		public async Task<object> Handle(C_VerifyUser request, CancellationToken cancellationToken)
 		{
@@ -23,7 +24,7 @@ namespace Application.Handlers.UserVerificationHandlers
 						message = "Hash is no longer valid"
 					};
 
-				HashPasswordModel hpm = Security.CreatePassword(request.Password);
+				HashPasswordModel hpm = security.CreatePassword(request.Password);
 
 				User user = new User
 				{

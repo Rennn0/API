@@ -36,9 +36,6 @@ namespace API
 			app.UseMiddleware<UserDataCollector>();
 
 			app.UseRouting();
-
-			app.UseHttpsRedirection();
-
 			app.UseAuthentication();
 			app.UseAuthorization();
 
@@ -62,15 +59,71 @@ namespace API
 				builder.AddSerilog(dispose: true);
 			});
 
+			services.AddHttpContextAccessor();
+			services.AddAuthorization();
 			services.AddEndpointsApiExplorer();
+
+			string? key = _configuration.GetSection("Jwt:Key").Get<string>();
+			string? issuer = _configuration.GetSection("Jwt:Issuer").Get<string>();
+			string? audience = _configuration.GetSection("Jwt:Audience").Get<string>();
+
+			if (key.IsNullOrEmpty() || issuer.IsNullOrEmpty() || audience.IsNullOrEmpty())
+				throw new ArgumentException("jwt config not provided");
+
+			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+				.AddJwtBearer(options =>
+				{
+					options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+					{
+						ValidateIssuer = true,
+						ValidateAudience = true,
+						ValidateLifetime = true,
+						ValidateIssuerSigningKey = true,
+						ValidIssuer = issuer,
+						ValidAudience = audience,
+						IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!)),
+						ClockSkew = TimeSpan.Zero
+					};
+				});
+
 			services.AddSwaggerGen(c =>
 			{
 				c.SwaggerDoc("v1", new OpenApiInfo { Title = "v1 api", Version = "1" });
 				c.SwaggerDoc("v2", new OpenApiInfo { Title = "v2 api", Version = "2" });
+
+				OpenApiSecurityScheme openApiSecurityScheme = new OpenApiSecurityScheme
+				{
+					Name = "Authentication",
+					Description = "JWT token only",
+					In = ParameterLocation.Header,
+					Type = SecuritySchemeType.Http,
+					Scheme = "bearer",
+					BearerFormat = "JWT",
+					Reference = new OpenApiReference
+					{
+						Id = JwtBearerDefaults.AuthenticationScheme,
+						Type = ReferenceType.SecurityScheme
+					}
+				};
+
+				c.AddSecurityDefinition(openApiSecurityScheme.Reference.Id, openApiSecurityScheme);
+				c.AddSecurityRequirement(new OpenApiSecurityRequirement
+				{
+					{openApiSecurityScheme,new string[] { } }
+				});
 			});
 
-			services.AddHttpContextAccessor();
-			services.AddAuthorization();
+			services.AddApiVersioning(options =>
+			{
+				options.DefaultApiVersion = new ApiVersion(1);
+				options.ReportApiVersions = true;
+				options.AssumeDefaultVersionWhenUnspecified = true;
+				options.ApiVersionReader = new UrlSegmentApiVersionReader();
+			}).AddApiExplorer(options =>
+			{
+				options.GroupNameFormat = "'v'V";
+				options.SubstituteApiVersionInUrl = true;
+			});
 
 			services.AddDbContext<EShopContext>(opt =>
 			{
@@ -92,7 +145,7 @@ namespace API
 
 			services.AddTransient<IUnitOfWork, UnitOfWork>();
 			services.AddTransient<IPostman, Postman>();
-
+			services.AddTransient(typeof(Security));
 			/*-------------------------------------------------------------------------------*/
 			/*---------------------------------MEDIATR---------------------------------------*/
 			/*-------------------------------------------------------------------------------*/
@@ -104,41 +157,6 @@ namespace API
 			/*-------------------------------------------------------------------------------*/
 			/*-------------------------------------------------------------------------------*/
 			/*-------------------------------------------------------------------------------*/
-
-			string? key = _configuration.GetSection("Jwt:Key").Get<string>();
-			string? issuuer = _configuration.GetSection("Jwt:Issuer").Get<string>();
-			string? audience = _configuration.GetSection("Jwt:Audience").Get<string>();
-
-			if (key.IsNullOrEmpty() || issuuer.IsNullOrEmpty() || audience.IsNullOrEmpty())
-				throw new ArgumentException("jwt config not provided");
-
-			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-				.AddJwtBearer(options =>
-				{
-					options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-					{
-						ValidateIssuer = true,
-						ValidateAudience = true,
-						ValidateLifetime = true,
-						ValidateIssuerSigningKey = true,
-						ValidIssuer = issuuer,
-						ValidAudience = audience,
-						IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!)),
-						ClockSkew = TimeSpan.Zero
-					};
-				});
-
-			services.AddApiVersioning(options =>
-			{
-				options.DefaultApiVersion = new ApiVersion(1);
-				options.ReportApiVersions = true;
-				options.AssumeDefaultVersionWhenUnspecified = true;
-				options.ApiVersionReader = new UrlSegmentApiVersionReader();
-			}).AddApiExplorer(options =>
-			{
-				options.GroupNameFormat = "'v'V";
-				options.SubstituteApiVersionInUrl = true;
-			});
 		}
 	}
 }

@@ -1,7 +1,6 @@
 ﻿using Application.Commands.UserVerificationCommands;
 using Application.Commands.VerificationCommands;
 using Application.Notifications;
-using Application.OtherUtils;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -9,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+	[Authorize]
 	[ApiVersion(1)]
 	[ApiVersion(2)]
 	[Route("api/v{v:apiVersion}/[controller]")]

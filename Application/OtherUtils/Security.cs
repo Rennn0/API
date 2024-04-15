@@ -1,25 +1,28 @@
 ﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Application.OtherUtils
 {
-	public static class Security
+	public class Security
 	{
-		private static int _IterationCount = 100000;
-		private static int _NumBytes = 32;
-		private static readonly RsaSecurityKey _Key;
+		private readonly int _IterationCount = 100000;
+		private readonly int _NumBytes = 32;
+		private readonly RsaSecurityKey _Key;
+		private readonly JwtConfig _jwt;
 
-		static Security()
+		public Security(IOptions<JwtConfig> jwt)
 		{
 			var rsa = RSA.Create(2048);
 			_Key = new RsaSecurityKey(rsa);
+			_jwt = jwt.Value;
 		}
 
-		public static HashPasswordModel CreatePassword(string raw)
+		public HashPasswordModel CreatePassword(string raw)
 		{
 			byte[] salt = RandomNumberGenerator.GetBytes(16);
 			string hashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(raw, salt, KeyDerivationPrf.HMACSHA256, _IterationCount, _NumBytes));
@@ -30,13 +33,13 @@ namespace Application.OtherUtils
 			};
 		}
 
-		public static bool Compare(string raw, string original, byte[] salt)
+		public bool Compare(string raw, string original, byte[] salt)
 		{
 			string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(raw, salt, KeyDerivationPrf.HMACSHA256, _IterationCount, _NumBytes));
 			return original == hashed;
 		}
 
-		public static Token Decode(string token)
+		public IEnumerable<Claim> DecodeSecured(string token)
 		{
 			JwtSecurityTokenHandler handler = new();
 			TokenValidationParameters decryptingCredentials = new()
@@ -59,28 +62,11 @@ namespace Application.OtherUtils
 			_ = validatedToken as JwtSecurityToken ?? throw new ArgumentException("Invalid Jwt");
 
 			IEnumerable<Claim> claims = principal.Claims;
-			Token tokenData = new();
-			foreach (var claim in claims)
-			{
-				switch (claim.Type)
-				{
-					case "Email":
-						tokenData.Email = claim.Value;
-						break;
 
-					case "Username":
-						tokenData.Username = claim.Value;
-						break;
-
-					case "Id":
-						tokenData.Id = Convert.ToInt32(claim.Value);
-						break;
-				}
-			}
-			return tokenData;
+			return claims;
 		}
 
-		public static string CreateToken(params (string, string)[] args)
+		public string CreateSecuredToken(params (string, string)[] args)
 		{
 			SigningCredentials credentials = new(_Key, SecurityAlgorithms.RsaSha256);
 
@@ -101,18 +87,27 @@ namespace Application.OtherUtils
 			JwtSecurityToken token = handler.CreateJwtSecurityToken(tokenDescriptor);
 			return handler.WriteToken(token);
 		}
-	}
 
-	public record HashPasswordModel
-	{
-		public byte[] Salt { get; set; }
-		public string Password { get; set; }
-	}
+		public string CreateToken(IEnumerable<Claim> claims)
+		{
+			SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(_jwt.Key));
+			SigningCredentials credentials = new(key, SecurityAlgorithms.HmacSha256);
 
-	public class Token
-	{
-		public string Email { get; set; }
-		public string Username { get; set; }
-		public int Id { get; set; }
+			JwtSecurityToken secToken = new(
+				issuer: _jwt.Issuer,
+				audience: _jwt.Audience,
+				claims: claims,
+				expires: DateTime.UtcNow.AddHours(1),
+				notBefore: DateTime.UtcNow,
+				signingCredentials: credentials);
+
+			return new JwtSecurityTokenHandler().WriteToken(secToken);
+		}
+
+		public record HashPasswordModel
+		{
+			public byte[] Salt { get; set; }
+			public string Password { get; set; }
+		}
 	}
 }
